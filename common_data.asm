@@ -78,16 +78,16 @@ xor_encrypt_decrypt:
     push r8
     push r9
 
-    lea rbx, [rsi]      ; rbx = base key pointer (save as callee-saved use)
-    xor rcx, rcx        ; index = 0
+    lea rbx, [rsi]
+    xor rcx, rcx
 
 .xloop8:
     cmp rcx, 64
     je .xret8
     mov al, [rdi + rcx]
     mov rdx, rcx
-    and rdx, 7          ; rdx = rcx % 8
-    mov bl, [rbx + rdx] ; bl = key[rdx]  (safe: bss zero-filled)
+    and rdx, 7
+    mov bl, [rbx + rdx]
     xor al, bl
     mov [rdi + rcx], al
     inc rcx

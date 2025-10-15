@@ -1,14 +1,12 @@
 ; show_passwords.asm
-; Exporte show_passwords()
-; Lit le fichier par blocs de 64, déchiffre (avec les 8 premiers octets de master_password)
-; et affiche: <login trimmed> <espace> <password trimmed>\n
-
 global show_passwords
+
 extern filename
 extern buffer
 extern master_password
 extern newline
 extern open_fail_msg
+extern xor_encrypt_decrypt
 
 section .data
 space db ' '
@@ -19,17 +17,16 @@ show_passwords:
     push rbx
     push rbp
 
-    ; open filename (O_RDONLY = 0)
+    ; open filename (O_RDONLY)
     mov rax, 2
     lea rdi, [rel filename]
     mov rsi, 0
     syscall
     cmp rax, -1
     je .open_err
-    mov rbx, rax      ; fd
+    mov rbx, rax
 
 .read_loop:
-    ; read 64 bytes
     mov rax, 0
     mov rdi, rbx
     lea rsi, [rel buffer]
@@ -38,30 +35,14 @@ show_passwords:
     cmp rax, 0
     je .close_and_done
     cmp rax, 64
-    jne .close_and_done    ; ignore partial block
+    jne .close_and_done
 
-    ; -------------------------
-    ; decrypt buffer in place using first 8 bytes of master_password
-    ; for i=0..63: buffer[i] ^= master_password[i & 7]
-    ; -------------------------
-    lea rdi, [rel buffer]            ; rdi -> buffer
-    lea rsi, [rel master_password]   ; rsi -> master_password
-    xor rcx, rcx                     ; index = 0
+    ; call centralized decrypt routine
+    lea rdi, [rel buffer]
+    lea rsi, [rel master_password]
+    call xor_encrypt_decrypt
 
-.decrypt_loop:
-    cmp rcx, 64
-    je .after_decrypt
-    mov al, [rdi + rcx]              ; load buffer[i]
-    mov rdx, rcx
-    and rdx, 7                       ; rdx = i % 8
-    mov r9b, [rsi + rdx]             ; load key byte (uses r9b to avoid altering rbx)
-    xor al, r9b
-    mov [rdi + rcx], al
-    inc rcx
-    jmp .decrypt_loop
-
-.after_decrypt:
-    ; ---------- print login field (buffer[0..31]) ----------
+    ; print login field
     lea rsi, [rel buffer]
     xor rcx, rcx
 .find_login:
@@ -83,14 +64,14 @@ show_passwords:
     syscall
 .skip_login_write:
 
-    ; ---------- print a single space ----------
+    ; space
     mov rax, 1
     mov rdi, 1
     lea rsi, [rel space]
     mov rdx, 1
     syscall
 
-    ; ---------- print password field (buffer[32..63]) ----------
+    ; print password field
     lea rsi, [rel buffer + 32]
     xor rcx, rcx
 .find_pass:
