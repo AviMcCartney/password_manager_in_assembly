@@ -1,4 +1,4 @@
-; main.asm — boucle persistante + option 3 pour quitter
+; main.asm
 
 global _start
 extern authenticate
