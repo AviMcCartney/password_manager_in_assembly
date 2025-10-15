@@ -72,53 +72,28 @@ section .text
 ;       (compatibilité sans DIV/MOD, coût négligeable à 64 octets).
 ; --------------------------------------------------------------------
 xor_encrypt_decrypt:
-    ; Sauvegarde des registres potentiellement clobber
     push rbx
     push rcx
     push rdx
     push r8
     push r9
 
-    ; ---- Mesure de la longueur de clé (r8 = L, bornée à 32) ----
-    xor r8, r8
-.xlen_loop:
-    mov al, [rsi + r8]    ; lire clé[r8]
-    cmp al, 0             ; fin ASCIIZ ?
-    je  .xlen_done
-    inc r8
-    cmp r8, 32            ; borne max de sécurité
-    jb  .xlen_loop
-.xlen_done:
-    cmp r8, 0             ; L == 0 ?
-    jne .have_key
-    jmp .xret             ; clé vide => no-op
+    lea rbx, [rsi]      ; rbx = base key pointer (save as callee-saved use)
+    xor rcx, rcx        ; index = 0
 
-.have_key:
-    ; ---- XOR des 64 octets avec clé périodique ----
-    xor rcx, rcx          ; rcx = i (0..63)
-.xloop:
+.xloop8:
     cmp rcx, 64
-    je  .xret
-
-    ; rdx = i mod L (par soustractions, L <= 32 => peu d’itérations)
-    mov rdx, rcx
-.mod_loop:
-    cmp rdx, r8
-    jb  .mod_done
-    sub rdx, r8
-    jmp .mod_loop
-.mod_done:
-    ; al = buffer[i] XOR key[rdx]
+    je .xret8
     mov al, [rdi + rcx]
-    mov bl, [rsi + rdx]
+    mov rdx, rcx
+    and rdx, 7          ; rdx = rcx % 8
+    mov bl, [rbx + rdx] ; bl = key[rdx]  (safe: bss zero-filled)
     xor al, bl
     mov [rdi + rcx], al
-
     inc rcx
-    jmp .xloop
+    jmp .xloop8
 
-.xret:
-    ; Restauration registres et retour
+.xret8:
     pop r9
     pop r8
     pop rdx
