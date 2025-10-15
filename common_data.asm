@@ -14,15 +14,17 @@ global open_fail_msg
 global filename
 
 global master_password
+global master_password_const    ; <-- exporte la constante du mot de passe maître
 global login
 global password
 global choice
 global entry
 global buffer
 global encrypted_entry
-global db_key              ; NEW: 8-byte encryption key
+global db_key
 
 global xor_encrypt_decrypt
+
 
 section .data
 ; -------------------- String constants --------------------
@@ -36,6 +38,10 @@ success_msg      db "Login and password stored successfully!", 0
 fail_msg         db "Error writing to file!", 0
 open_fail_msg    db "Error opening file!", 0
 filename         db 'databs.txt', 0
+
+; -------------------- Master password constant (set your real master here) -----------
+; IMPORTANT: replace "supersecret" with your desired master password (NUL-terminated)
+master_password_const db "x0r1nG_4_StR1nG_w1Th_4_k3y", 0
 
 section .bss
 ; -------------------- Mutable buffers --------------------
