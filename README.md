@@ -15,7 +15,9 @@ Cela compilera le gestionnaire de mots de passe.
 Une fois la compilation terminée, lancez le programme avec :
 
 ```bash
-./vault
+./vault 
+Enter master password: x0r1nG_4_StR1nG_w1Th_4_k3y
+Mot de passe correct
 ```
 
 ## Description
